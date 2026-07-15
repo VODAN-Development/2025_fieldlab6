@@ -27,7 +27,7 @@ app = Flask(__name__)
 # Enable CORS for Vue.js frontend
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost", "http://localhost:80"],
+        "origins": ["http://localhost", "http://localhost:8080"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
