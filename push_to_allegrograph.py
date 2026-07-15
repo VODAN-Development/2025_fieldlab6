@@ -152,12 +152,23 @@ if host == "localhost" or host == "127.0.0.1":
 
 print(f"Connection details: host={host}, port={port}, repo={repo_name}, user={username}")
 
+# Detect and handle protocol cleanly
+protocol = "http"
+if host.startswith("https://"):
+    protocol = "https"
+    host = host.replace("https://", "")
+elif host.startswith("http://"):
+    host = host.replace("http://", "")
+
+# Build dynamic base URL
+base_url = f"{protocol}://{host}:{port}"
+
 # Load RDF data from the generated file
 rdf_file = "Human_trafficking_output.ttl"  # Path to the RDF file
 
 # Upload RDF Data to AllegroGraph using REST API (Python 3.11+ compatible)
 try:
-    print(f"Connecting to AllegroGraph repository: {repo_name} at {host}:{port}")
+    print(f"Connecting to AllegroGraph repository: {repo_name} at {base_url}")
     
     # Read the RDF file
     with open(rdf_file, "rb") as f:
@@ -166,7 +177,7 @@ try:
     print(f"Read {len(rdf_content)} bytes from {rdf_file}")
     
     # Check if repository exists, create if not
-    catalog_url = f"http://{host}:{port}/catalogs"
+    catalog_url = f"{base_url}/catalogs"
     repositories_url = f"{catalog_url}/repositories"
     repo_check_url = f"{repositories_url}/{repo_name}"
     
@@ -200,7 +211,7 @@ try:
         print(f"Repository {repo_name} exists.")
     
     # Get current triple count before upload
-    size_url = f"http://{host}:{port}/repositories/{repo_name}/size"
+    size_url = f"{base_url}/repositories/{repo_name}/size"
     size_response = requests.get(size_url, auth=(username, password))
     
     if size_response.status_code == 200:
@@ -211,7 +222,7 @@ try:
         initial_count = 0
     
     # Upload the RDF data
-    statements_url = f"http://{host}:{port}/repositories/{repo_name}/statements"
+    statements_url = f"{base_url}/repositories/{repo_name}/statements"
     headers = {
         "Content-Type": "application/x-turtle"  # Turtle format
     }
@@ -249,9 +260,9 @@ except FileNotFoundError:
     print(f"ERROR: RDF file not found: {rdf_file}")
     print("Please make sure you have generated the RDF file first (Step 3).")
 except requests.exceptions.ConnectionError:
-    print("ERROR: Could not connect to AllegroGraph.")
-    print("Please make sure AllegroGraph is running at http://localhost:10035")
-    print("You can start it with: docker start allegrograph")
+    print(f"ERROR: Could not connect to AllegroGraph at {base_url}.")
+    print("Please make sure AllegroGraph is running and accessible.")
+    print("Note: If you are using AllegroGraph Cloud, ensure the port is 443, not 10035.")
 except Exception as e:
     print(f"An error occurred: {e}")
     import traceback
